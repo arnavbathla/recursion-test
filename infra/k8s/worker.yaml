@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recursive-arc-worker
+  labels: { app: recursive-arc-worker }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: recursive-arc-worker }
+  template:
+    metadata:
+      labels: { app: recursive-arc-worker }
+    spec:
+      containers:
+        - name: worker
+          image: recursive-arc-engine/worker:latest
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: arc-secrets, key: database_url } }
+            - name: REDIS_URL
+              valueFrom: { secretKeyRef: { name: arc-secrets, key: redis_url } }
+            # For GPU inference set ARC_DEVICE=cuda and request a GPU below.
+            - name: ARC_DEVICE
+              value: cpu
+          resources:
+            requests: { cpu: "1", memory: "2Gi" }
+            limits:
+              cpu: "4"
+              memory: "8Gi"
+              # GPU production: uncomment and use the CUDA worker image.
+              # nvidia.com/gpu: "1"

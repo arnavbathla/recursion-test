@@ -1,0 +1,91 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: arc
+      POSTGRES_PASSWORD: arc
+      POSTGRES_DB: arc
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U arc"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.api
+    environment:
+      DATABASE_URL: postgresql://arc:arc@postgres:5432/arc
+      REDIS_URL: redis://redis:6379/0
+      ARC_DATA_ROOT: /app/data/raw/ARC-AGI-2
+      MODEL_REGISTRY_PATH: /app/artifacts/model_registry.json
+      CHECKPOINT_DIR: /app/checkpoints
+      MAX_RECURSION_STEPS: "64"
+      ARC_DEVICE: cpu
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount synced data + trained checkpoints from the host.
+      - ./data:/app/data
+      - ./checkpoints:/app/checkpoints
+      - ./artifacts:/app/artifacts
+      - ./reports:/app/reports
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # CPU worker for async evaluation jobs. For GPU, see infra/Dockerfile.worker.
+  worker:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.worker
+    environment:
+      DATABASE_URL: postgresql://arc:arc@postgres:5432/arc
+      REDIS_URL: redis://redis:6379/0
+      ARC_DATA_ROOT: /app/data/raw/ARC-AGI-2
+      MODEL_REGISTRY_PATH: /app/artifacts/model_registry.json
+      CHECKPOINT_DIR: /app/checkpoints
+      ARC_DEVICE: cpu
+    volumes:
+      - ./data:/app/data
+      - ./checkpoints:/app/checkpoints
+      - ./artifacts:/app/artifacts
+      - ./reports:/app/reports
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    environment:
+      # Browser-side calls hit the host-mapped API port.
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+      API_BASE_URL: http://api:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

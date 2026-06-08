@@ -1,0 +1,48 @@
+# Smoke config: a TINY real model trained for a handful of steps on REAL ARC data.
+# This validates the end-to-end path (data -> model -> checkpoint). It is NOT the
+# claimed final model and will have low/near-zero exact match.
+model:
+  name: smoke
+  arch: trm
+  d_model: 64
+  n_heads: 4
+  mlp_dim: 256
+  max_seq_len: 4096
+  num_segments: 8
+  dropout: 0.0
+
+data:
+  root: data/raw/ARC-AGI-2
+  train_holdout_ratio: 0.15
+  seed: 42
+  allow_official_eval_for_training: false
+  # Keep it tiny + fast for CI/local; uses real ARC tasks (never synthetic).
+  max_train_tasks: 12
+  max_val_tasks: 8
+
+training:
+  mode: deep_supervision
+  # A few short epochs so the training-history curve has multiple points; still
+  # tiny and fast. This is pipeline validation, NOT the claimed final model.
+  epochs: 3
+  batch_size: 2
+  lr: 0.0003
+  weight_decay: 0.01
+  grad_clip: 1.0
+  mixed_precision: fp32
+  recursion_depths: [1, 2, 4]
+  recursion_steps_per_supervision: 2
+  num_supervision_steps: 2
+  eval_every_epochs: 1
+  checkpoint_every_epochs: 1
+  num_workers: 0
+  seed: 42
+  eval_depth: 4
+
+eval:
+  depths: [1, 2, 4]
+  metrics:
+    - exact_match
+    - pixel_accuracy
+    - shape_accuracy
+    - latency_ms

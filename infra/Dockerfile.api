@@ -1,0 +1,31 @@
+# API image: FastAPI + CPU PyTorch inference.
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONPATH=/app
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git build-essential libpq-dev curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv for fast, reproducible installs.
+RUN pip install uv
+
+COPY pyproject.toml ./
+# Install dependencies (CPU torch wheel is the default on linux x86_64).
+RUN uv pip install --system \
+    "torch>=2.2" numpy "fastapi>=0.110" "uvicorn[standard]>=0.29" \
+    "pydantic>=2.6" "pydantic-settings>=2.2" "sqlalchemy>=2.0" "alembic>=1.13" \
+    "psycopg2-binary>=2.9" "redis>=5.0" "rq>=1.16" "pyyaml>=6.0" "python-dotenv>=1.0" "httpx>=0.27"
+
+COPY packages ./packages
+COPY apps ./apps
+COPY configs ./configs
+COPY checkpoints ./checkpoints
+COPY artifacts ./artifacts
+
+EXPOSE 8080
+CMD ["uvicorn", "apps.api.main:app", "--host", "0.0.0.0", "--port", "8080"]

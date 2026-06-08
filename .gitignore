@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Data (synced via script, not committed)
+data/raw/ARC-AGI-2/
+data/processed/*
+!data/processed/.gitkeep
+
+# Artifacts / checkpoints / reports (generated)
+checkpoints/*
+!checkpoints/.gitkeep
+artifacts/*
+!artifacts/.gitkeep
+reports/*
+!reports/.gitkeep
+*.pt
+*.ckpt
+
+# Local DB
+*.db
+*.sqlite3
+
+# Node / Next.js
+node_modules/
+apps/web/.next/
+apps/web/out/
+apps/web/node_modules/
+
+# OS / editor
+.DS_Store

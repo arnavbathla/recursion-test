@@ -1,0 +1,36 @@
+# Worker image.
+#
+# Production GPU variant: switch the base image to an NVIDIA CUDA runtime and
+# install the matching CUDA torch wheel, e.g.:
+#   FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
+#   ... install python3.11 + pip ...
+#   pip install torch --index-url https://download.pytorch.org/whl/cu124
+# Then run with `docker run --gpus all ...` (or k8s nvidia.com/gpu requests).
+#
+# This default uses CPU torch so it runs anywhere (CI, laptops without CUDA).
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONPATH=/app
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git build-essential libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install uv
+COPY pyproject.toml ./
+RUN uv pip install --system \
+    "torch>=2.2" numpy "fastapi>=0.110" "pydantic>=2.6" "pydantic-settings>=2.2" \
+    "sqlalchemy>=2.0" "psycopg2-binary>=2.9" "redis>=5.0" "rq>=1.16" \
+    "pyyaml>=6.0" "python-dotenv>=1.0"
+
+COPY packages ./packages
+COPY apps ./apps
+COPY configs ./configs
+COPY checkpoints ./checkpoints
+COPY artifacts ./artifacts
+
+CMD ["python", "-m", "apps.worker.worker"]

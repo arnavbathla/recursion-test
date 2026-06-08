@@ -1,0 +1,42 @@
+model:
+  name: baseline_v1
+  arch: baseline
+  d_model: 256
+  n_heads: 8
+  mlp_dim: 1024
+  max_seq_len: 4096
+  num_segments: 8
+  num_layers: 8
+  dropout: 0.0
+
+data:
+  root: data/raw/ARC-AGI-2
+  train_holdout_ratio: 0.15
+  seed: 42
+  allow_official_eval_for_training: false
+
+training:
+  # Baseline is single-pass; "simple" mode runs one forward pass per step.
+  mode: simple
+  epochs: 200
+  batch_size: 16
+  lr: 0.0003
+  weight_decay: 0.01
+  grad_clip: 1.0
+  mixed_precision: bf16
+  recursion_depths: [1]
+  recursion_steps_per_supervision: 1
+  num_supervision_steps: 1
+  eval_every_epochs: 5
+  checkpoint_every_epochs: 5
+  num_workers: 4
+  seed: 42
+  eval_depth: 1
+
+eval:
+  depths: [1]
+  metrics:
+    - exact_match
+    - pixel_accuracy
+    - shape_accuracy
+    - latency_ms

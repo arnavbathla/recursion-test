@@ -1,0 +1,40 @@
+model:
+  name: trm_arc_v1
+  arch: trm
+  d_model: 256
+  n_heads: 8
+  mlp_dim: 1024
+  max_seq_len: 4096
+  num_segments: 8
+  dropout: 0.0
+
+data:
+  root: data/raw/ARC-AGI-2
+  train_holdout_ratio: 0.15
+  seed: 42
+  allow_official_eval_for_training: false
+
+training:
+  mode: deep_supervision
+  epochs: 200
+  batch_size: 16
+  lr: 0.0003
+  weight_decay: 0.01
+  grad_clip: 1.0
+  mixed_precision: bf16
+  recursion_depths: [1, 2, 4, 8, 16, 32]
+  recursion_steps_per_supervision: 4
+  num_supervision_steps: 8
+  eval_every_epochs: 5
+  checkpoint_every_epochs: 5
+  num_workers: 4
+  seed: 42
+  eval_depth: 16
+
+eval:
+  depths: [1, 2, 4, 8, 16, 32, 64]
+  metrics:
+    - exact_match
+    - pixel_accuracy
+    - shape_accuracy
+    - latency_ms
