@@ -17,16 +17,32 @@ real FastAPI + Next.js stack with run logging and recursion-depth evaluation.
   leakage guards, deep-supervision training, recursion-depth evaluation + ablations,
   a model registry, Postgres/SQLite run logging, a web UI, Docker Compose, and tests.
 
-## 2. What this is NOT
+## 2. Screenshots
 
-- **Not AGI. Not RSI.** It is a small supervised model.
-- **Not a hand-coded ARC solver.** There are no symbolic rules, no task-id special
-  casing, and no inspection of evaluation answers.
-- **Not a GPT/Claude/LLM wrapper.** There is no LLM API dependency for solving ARC.
-- **Not a fake demo.** The UI calls the real API; `/v1/solve` runs the real PyTorch
-  model; a missing checkpoint returns a real `503`, never a fake success.
-- Exact-match scores depend entirely on training quality. The important production
-  artifact is the **reproducible recursive-reasoning lab**, not a leaderboard number.
+> The UI calls the real API; every grid, prediction, trace, and metric below is produced
+> by the actual `TRMARCModel`, not static fixtures. The shipped model is the tiny
+> `smoke` checkpoint (pipeline validation), so exact-match is expectedly near zero.
+
+**Home — overview + accuracy vs. recursion depth**
+
+![Home page](docs/images/home.png)
+
+**Tasks — browse real ARC-AGI-2 tasks by split**
+
+![Tasks list](docs/images/tasks.png)
+
+**Solve — run the model on a task: prediction, metrics, and the recursion trace**
+
+![Solve panel](docs/images/solve.png)
+
+**Evals — depth sweeps for recursive vs. baseline, plus latency**
+
+![Eval dashboard](docs/images/evals.png)
+
+**Models — registry metadata and training dynamics (loss, gradient norm, and the
+per-epoch weight-update magnitude that proves the optimizer is changing the weights)**
+
+![Models / training dynamics](docs/images/models.png)
 
 ## 3. Architecture
 
